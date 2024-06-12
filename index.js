@@ -26,6 +26,7 @@ let personas = [
         "number": "39-23-6423122"
     }
 ]
+app.use(express.static('dist'))
 app.use(cors())
 app.get('/api/personas', (request, response) => {
     response.json(personas)
@@ -96,4 +97,4 @@ app.use(unknownEndpoint)
 
 
 const PORT = process.env.PORT || 3001
-app.listen(PORT)
+app.listen(PORT, () => console.log(PORT))
