@@ -1,35 +1,21 @@
 const morgan = require('morgan')
 const cors = require('cors')
-
 const express = require('express')
 const app = express()
+require('dotenv').config()
+const Person = require('./models/mongo')
+
+
 
 let personas = [
-    {
-        "id": 1,
-        "name": "Arto Hellas",
-        "number": "040-123456"
-    },
-    {
-        "id": 2,
-        "name": "Ada Lovelace",
-        "number": "39-44-5323523"
-    },
-    {
-        "id": 3,
-        "name": "Dan Abramov",
-        "number": "12-43-234345"
-    },
-    {
-        "id": 4,
-        "name": "Mary Poppendieck",
-        "number": "39-23-6423122"
-    }
+
 ]
 app.use(express.static('dist'))
 app.use(cors())
 app.get('/api/personas', (request, response) => {
-    response.json(personas)
+    Person.find({}).then(person =>
+        response.json(person)
+    )
 })
 app.get('/api/info', (request, response) => {
     const info = personas.length
@@ -41,14 +27,12 @@ app.get('/api/info', (request, response) => {
     response.send(text)
 })
 app.get('/api/personas/:id', (request, response) => {
-    const id = Number(request.params.id)
-    const person = personas.find(n => n.id === id)
 
-    if (person) {
+    Person.findById(request.params.id).then(person =>
         response.json(person)
-    } else {
-        response.status(404).end()
-    }
+    )
+
+
 })
 app.delete('/api/personas/:id', (request, response) => {
     const id = Number(request.params.id)
@@ -75,20 +59,16 @@ const unknownEndpoint = (request, response) => {
 }
 app.post('/api/personas', (request, response) => {
     const body = request.body
-    const person = {
-        id: randomId(),
-        name: request.body.name,
-        number: request.body.number
-
+    if (body.name === undefined) {
+        return response.status(400).json({ error: 'name missing' })
     }
-    console.log(personas.some(b => b.name === body.name));
-    if (body.name && body.number && !personas.some(b => b.name === body.name)) {
-        personas = personas.concat(person)
-        return response.json(personas)
-    } else {
-        return response.status(404).json({ error: 'error grave' })
-
-    }
+    const person = new Person({
+        name: body.name,
+        number: body.number
+    })
+    person.save().then(savedPerson => {
+        response.json(savedPerson)
+    })
 
 
 })
@@ -96,5 +76,5 @@ app.use(unknownEndpoint)
 
 
 
-const PORT = process.env.PORT || 3001
+const PORT = process.env.PORT
 app.listen(PORT, () => console.log(PORT))
